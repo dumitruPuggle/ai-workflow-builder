@@ -6,7 +6,6 @@ import {
 	useCurrentFrame,
 	useVideoConfig,
 	Easing,
-	spring,
 } from "remotion";
 
 const FONT_FAMILY = "Inter, sans-serif";
@@ -14,10 +13,12 @@ const FONT_FAMILY = "Inter, sans-serif";
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
 const useFitText = (text: string, maxWidth: number, baseFontSize: number) => {
+	// Simple heuristic fit: scale down by length vs baseline.
 	const len = Math.max(1, text.length);
-	const baseline = 18;
+	const baseline = 18; // tuned for short headlines
 	const ratio = clamp(baseline / len, 0.62, 1);
 	const scaled = baseFontSize * ratio;
+	// Additional gentle cap based on available width (very rough, deterministic).
 	const widthFactor = clamp(maxWidth / 1100, 0.7, 1);
 	return scaled * widthFactor;
 };
@@ -25,6 +26,8 @@ const useFitText = (text: string, maxWidth: number, baseFontSize: number) => {
 const TitleCard: React.FC = () => {
 	const frame = useCurrentFrame();
 	const {fps, width, height, durationInFrames} = useVideoConfig();
+
+	const t = frame / fps;
 
 	const introIn = 16;
 	const titleIn = 26;
@@ -53,7 +56,7 @@ const TitleCard: React.FC = () => {
 		easing: Easing.out(Easing.cubic),
 	});
 
-	const settle = interpolate(frame, [titleIn, titleIn + 18], [0.985, 1], {
+	const settle = interpolate(frame, [titleIn, titleIn + 18], [0.98, 1], {
 		extrapolateLeft: "clamp",
 		extrapolateRight: "clamp",
 		easing: Easing.out(Easing.cubic),
@@ -81,51 +84,6 @@ const TitleCard: React.FC = () => {
 	const g1x = 20 + bgShift * 10;
 	const g2x = 78 - bgShift * 8;
 
-	// Springs for more tactile motion
-	const introSpring = spring({
-		frame: frame - 2,
-		fps,
-		config: {damping: 18, stiffness: 140, mass: 0.9},
-	});
-
-	const titleSpring = spring({
-		frame: frame - titleIn + 2,
-		fps,
-		config: {damping: 16, stiffness: 170, mass: 0.85},
-	});
-
-	const dotPop = spring({
-		frame: frame - 6,
-		fps,
-		config: {damping: 14, stiffness: 260, mass: 0.7},
-	});
-
-	const underlineWipe = spring({
-		frame: frame - (titleIn + 6),
-		fps,
-		config: {damping: 16, stiffness: 140, mass: 0.9},
-	});
-
-	const microUiSpring = spring({
-		frame: frame - 22,
-		fps,
-		config: {damping: 20, stiffness: 150, mass: 1},
-	});
-
-	// Replace global fade-out with a subtle end "lift" + vignette deepen (keeps continuity)
-	const endStart = Math.max(0, durationInFrames - 18);
-	const endProgress = interpolate(frame, [endStart, durationInFrames - 1], [0, 1], {
-		extrapolateLeft: "clamp",
-		extrapolateRight: "clamp",
-		easing: Easing.inOut(Easing.cubic),
-	});
-	const endLift = interpolate(endProgress, [0, 1], [0, -6]);
-	const endVignetteBoost = interpolate(endProgress, [0, 1], [0, 0.18]);
-
-	// Stronger contrast accents
-	const accentBlue = "rgba(96,165,250,0.50)";
-	const accentPurple = "rgba(167,139,250,0.44)";
-
 	return (
 		<AbsoluteFill
 			style={{
@@ -137,34 +95,32 @@ const TitleCard: React.FC = () => {
 			{/* Gradient backdrop */}
 			<AbsoluteFill
 				style={{
-					background: `radial-gradient(1200px 700px at ${g1x}% 30%, ${accentBlue} 0%, rgba(96,165,250,0.10) 35%, rgba(0,0,0,0) 70%),
-radial-gradient(900px 600px at ${g2x}% 55%, ${accentPurple} 0%, rgba(167,139,250,0.09) 40%, rgba(0,0,0,0) 70%),
+					background: `radial-gradient(1200px 700px at ${g1x}% 30%, rgba(96,165,250,0.35) 0%, rgba(96,165,250,0.08) 35%, rgba(0,0,0,0) 70%),
+radial-gradient(900px 600px at ${g2x}% 55%, rgba(167,139,250,0.30) 0%, rgba(167,139,250,0.07) 40%, rgba(0,0,0,0) 70%),
 linear-gradient(180deg, #070A12 0%, #050611 55%, #04040B 100%)`,
-					filter: "saturate(1.08) contrast(1.05)",
 				}}
 			/>
-
 			{/* Subtle grid */}
 			<AbsoluteFill
 				style={{
-					opacity: 0.24,
+					opacity: 0.22,
 					backgroundImage:
-						"linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px)",
+						"linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)",
 					backgroundSize: "64px 64px",
 					backgroundPosition: "center",
 					maskImage:
-						"radial-gradient(75% 60% at 50% 40%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.22) 65%, rgba(0,0,0,0) 100%)",
+						"radial-gradient(75% 60% at 50% 40%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.2) 65%, rgba(0,0,0,0) 100%)",
 					WebkitMaskImage:
-						"radial-gradient(75% 60% at 50% 40%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.22) 65%, rgba(0,0,0,0) 100%)",
+						"radial-gradient(75% 60% at 50% 40%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.2) 65%, rgba(0,0,0,0) 100%)",
 				}}
 			/>
 
 			{/* Vignette */}
 			<AbsoluteFill
 				style={{
-					opacity: clamp(vignetteOpacity + endVignetteBoost, 0, 1),
+					opacity: vignetteOpacity,
 					background:
-						"radial-gradient(1200px 700px at 50% 40%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.74) 100%)",
+						"radial-gradient(1200px 700px at 50% 40%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.7) 100%)",
 				}}
 			/>
 
@@ -175,7 +131,6 @@ linear-gradient(180deg, #070A12 0%, #050611 55%, #04040B 100%)`,
 					alignItems: "center",
 					justifyContent: "center",
 					padding: 80,
-					transform: `translateY(${endLift}px)`,
 				}}
 			>
 				<div
@@ -193,17 +148,13 @@ linear-gradient(180deg, #070A12 0%, #050611 55%, #04040B 100%)`,
 							alignItems: "center",
 							justifyContent: "center",
 							gap: 10,
-							padding: 0,
-							borderRadius: 0,
-							border: "none",
-							background: "transparent",
-							backdropFilter: "none",
-							WebkitBackdropFilter: "none",
-							transform: `translateY(${introY}px) scale(${interpolate(
-								introSpring,
-								[0, 1],
-								[0.98, 1],
-							)})`,
+							padding: "10px 14px",
+							borderRadius: 999,
+							border: "1px solid rgba(255,255,255,0.12)",
+							background: "rgba(255,255,255,0.04)",
+							backdropFilter: "blur(6px)",
+							WebkitBackdropFilter: "blur(6px)",
+							transform: `translateY(${introY}px)`,
 							opacity: introOpacity,
 						}}
 					>
@@ -213,19 +164,16 @@ linear-gradient(180deg, #070A12 0%, #050611 55%, #04040B 100%)`,
 								height: 8,
 								borderRadius: 999,
 								background: "linear-gradient(180deg, #60A5FA, #A78BFA)",
-								boxShadow:
-									"0 0 22px rgba(96,165,250,0.30), 0 0 28px rgba(167,139,250,0.26)",
-								transform: `scale(${interpolate(dotPop, [0, 1], [0.7, 1])})`,
+								boxShadow: "0 0 18px rgba(167,139,250,0.35)",
 							}}
 						/>
 						<span
 							style={{
-								color: "rgba(255,255,255,0.92)",
+								color: "rgba(255,255,255,0.88)",
 								fontSize: introSize,
-								fontWeight: 650,
-								letterSpacing: 0.4,
+								fontWeight: 600,
+								letterSpacing: 0.2,
 								lineHeight: 1,
-								textShadow: "0 10px 30px rgba(0,0,0,0.35)",
 							}}
 						>
 							Introducing
@@ -236,30 +184,25 @@ linear-gradient(180deg, #070A12 0%, #050611 55%, #04040B 100%)`,
 					<div style={{height: 18}} />
 					<div
 						style={{
-							transform: `translateY(${titleY}px) scale(${interpolate(
-								titleSpring,
-								[0, 1],
-								[0.985, 1],
-							)})`,
+							transform: `translateY(${titleY}px)`,
 							opacity: titleOpacity,
 						}}
 					>
 						<div
 							style={{
 								fontSize: titleSize,
-								fontWeight: 850,
-								letterSpacing: -1.25,
+								fontWeight: 800,
+								letterSpacing: -1.2,
 								lineHeight: 1.05,
 								color: "white",
-								textShadow:
-									"0 18px 60px rgba(0,0,0,0.55), 0 6px 18px rgba(0,0,0,0.35)",
+								textShadow: "0 16px 50px rgba(0,0,0,0.45)",
 								margin: 0,
 							}}
 						>
 							<span
 								style={{
 									background:
-										"linear-gradient(90deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.94) 35%, rgba(255,255,255,0.90) 65%, rgba(255,255,255,0.98) 100%)",
+										"linear-gradient(90deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.92) 35%, rgba(255,255,255,0.88) 60%, rgba(255,255,255,0.96) 100%)",
 									WebkitBackgroundClip: "text",
 									backgroundClip: "text",
 									color: "transparent",
@@ -269,7 +212,7 @@ linear-gradient(180deg, #070A12 0%, #050611 55%, #04040B 100%)`,
 							</span>
 						</div>
 
-						{/* Accent underline (wipe in) */}
+						{/* Accent underline */}
 						<div
 							style={{
 								margin: "18px auto 0",
@@ -277,17 +220,15 @@ linear-gradient(180deg, #070A12 0%, #050611 55%, #04040B 100%)`,
 								width: Math.min(maxTextWidth * 0.52, 520),
 								borderRadius: 999,
 								background:
-									"linear-gradient(90deg, rgba(96,165,250,0) 0%, rgba(96,165,250,0.98) 20%, rgba(167,139,250,0.98) 80%, rgba(167,139,250,0) 100%)",
-								opacity: 0.92,
-								boxShadow: "0 14px 50px rgba(96,165,250,0.22)",
-								transformOrigin: "50% 50%",
-								transform: `scaleX(${clamp(underlineWipe, 0, 1)})`,
-								filter: "saturate(1.08)",
+									"linear-gradient(90deg, rgba(96,165,250,0) 0%, rgba(96,165,250,0.9) 20%, rgba(167,139,250,0.9) 80%, rgba(167,139,250,0) 100%)",
+								opacity: 0.85,
+								filter: "blur(0px)",
+								boxShadow: "0 10px 40px rgba(96,165,250,0.18)",
 							}}
 						/>
 					</div>
 
-					{/* Micro UI hint */}
+					{/* Micro UI hint (optional, subtle) */}
 					<div
 						style={{
 							marginTop: 34,
@@ -304,52 +245,28 @@ linear-gradient(180deg, #070A12 0%, #050611 55%, #04040B 100%)`,
 							style={{
 								width: Math.min(maxTextWidth, 980),
 								borderRadius: 18,
-								border: "1px solid rgba(255,255,255,0.11)",
+								border: "1px solid rgba(255,255,255,0.10)",
 								background:
-									"linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.03) 100%)",
+									"linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.03) 100%)",
 								boxShadow:
-									"0 34px 90px rgba(0,0,0,0.58), inset 0 1px 0 rgba(255,255,255,0.09)",
+									"0 30px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08)",
 								padding: "14px 16px",
 								display: "flex",
 								alignItems: "center",
 								gap: 10,
 								backdropFilter: "blur(10px)",
 								WebkitBackdropFilter: "blur(10px)",
-								transform: `translateY(${interpolate(frame, [22, 40], [12, 0], {
+								transform: `translateY(${interpolate(frame, [22, 40], [10, 0], {
 									extrapolateLeft: "clamp",
 									extrapolateRight: "clamp",
 									easing: Easing.out(Easing.cubic),
-								})}px) scale(${interpolate(microUiSpring, [0, 1], [0.99, 1])})`,
+								})}px)`,
 							}}
 						>
 							<div style={{display: "flex", gap: 8}}>
-								<div
-									style={{
-										width: 10,
-										height: 10,
-										borderRadius: 999,
-										background: "rgba(255,99,132,0.95)",
-										boxShadow: "0 0 18px rgba(255,99,132,0.18)",
-									}}
-								/>
-								<div
-									style={{
-										width: 10,
-										height: 10,
-										borderRadius: 999,
-										background: "rgba(255,205,86,0.95)",
-										boxShadow: "0 0 18px rgba(255,205,86,0.14)",
-									}}
-								/>
-								<div
-									style={{
-										width: 10,
-										height: 10,
-										borderRadius: 999,
-										background: "rgba(75,192,192,0.95)",
-										boxShadow: "0 0 18px rgba(75,192,192,0.14)",
-									}}
-								/>
+								<div style={{width: 10, height: 10, borderRadius: 999, background: "rgba(255,99,132,0.9)"}} />
+								<div style={{width: 10, height: 10, borderRadius: 999, background: "rgba(255,205,86,0.9)"}} />
+								<div style={{width: 10, height: 10, borderRadius: 999, background: "rgba(75,192,192,0.9)"}} />
 							</div>
 							<div style={{flex: 1, display: "flex", gap: 10, alignItems: "center"}}>
 								<div
@@ -357,7 +274,7 @@ linear-gradient(180deg, #070A12 0%, #050611 55%, #04040B 100%)`,
 										height: 10,
 										width: "22%",
 										borderRadius: 999,
-										background: "rgba(255,255,255,0.12)",
+										background: "rgba(255,255,255,0.10)",
 									}}
 								/>
 								<div
@@ -365,7 +282,7 @@ linear-gradient(180deg, #070A12 0%, #050611 55%, #04040B 100%)`,
 										height: 10,
 										width: "34%",
 										borderRadius: 999,
-										background: "rgba(96,165,250,0.26)",
+										background: "rgba(96,165,250,0.22)",
 									}}
 								/>
 								<div
@@ -373,7 +290,7 @@ linear-gradient(180deg, #070A12 0%, #050611 55%, #04040B 100%)`,
 										height: 10,
 										width: "18%",
 										borderRadius: 999,
-										background: "rgba(167,139,250,0.24)",
+										background: "rgba(167,139,250,0.20)",
 									}}
 								/>
 							</div>
@@ -381,11 +298,11 @@ linear-gradient(180deg, #070A12 0%, #050611 55%, #04040B 100%)`,
 								style={{
 									padding: "8px 10px",
 									borderRadius: 12,
-									border: "1px solid rgba(255,255,255,0.13)",
-									background: "rgba(255,255,255,0.05)",
-									color: "rgba(255,255,255,0.90)",
+									border: "1px solid rgba(255,255,255,0.12)",
+									background: "rgba(255,255,255,0.04)",
+									color: "rgba(255,255,255,0.82)",
 									fontSize: 14,
-									fontWeight: 650,
+									fontWeight: 600,
 									letterSpacing: 0.2,
 									whiteSpace: "nowrap",
 								}}
@@ -396,6 +313,23 @@ linear-gradient(180deg, #070A12 0%, #050611 55%, #04040B 100%)`,
 					</div>
 				</div>
 			</AbsoluteFill>
+
+			{/* Gentle fade out at end */}
+			<AbsoluteFill
+				style={{
+					backgroundColor: "#050611",
+					opacity: interpolate(
+						frame,
+						[Math.max(0, durationInFrames - 18), durationInFrames - 1],
+						[0, 1],
+						{
+							extrapolateLeft: "clamp",
+							extrapolateRight: "clamp",
+							easing: Easing.in(Easing.cubic),
+						},
+					),
+				}}
+			/>
 		</AbsoluteFill>
 	);
 };
