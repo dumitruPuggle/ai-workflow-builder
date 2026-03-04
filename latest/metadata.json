@@ -1,0 +1,48 @@
+{
+  "projectName": "ai-workflow-builder",
+  "prompt": "Make an demo video of our new AI Workflow builder feature.\n\nShow Text \n“Introducing”\n“The AI Workflow Builder”",
+  "summary": "Generated initial animation code.",
+  "timestamp": 1772622536556,
+  "model": "gpt-5.2",
+  "skills": [
+    "typography"
+  ],
+  "conversationMessages": [
+    {
+      "id": "user-1772622489356",
+      "role": "user",
+      "content": "Make an demo video of our new AI Workflow builder feature.\n\nShow Text \n“Introducing”\n“The AI Workflow Builder”",
+      "timestamp": 1772622489356
+    },
+    {
+      "id": "assistant-1772622536556",
+      "role": "assistant",
+      "content": "Generated initial animation code.",
+      "timestamp": 1772622536556,
+      "metadata": {
+        "skills": [
+          "typography"
+        ],
+        "edit_type": "full_replacement",
+        "model": "gpt-5.2",
+        "edits": null,
+        "imported_interface": null,
+        "attached_image_urls": [],
+        "imported_scene_graph": null,
+        "format": "landscape",
+        "font_family": "Inter, sans-serif",
+        "template_id": null,
+        "scenes": null,
+        "selected_scene_id": null,
+        "persistence": null
+      }
+    }
+  ],
+  "attachedImageUrls": [],
+  "fontFamily": "Inter, sans-serif",
+  "format": "landscape",
+  "snapshotId": "1772622536556-380011ea",
+  "commitName": "generation: Generated initial animation code.",
+  "assetPaths": [],
+  "savedAtIso": "2026-03-04T11:08:56.848Z"
+}
